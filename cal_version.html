@@ -1,23 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Decimal to Hexadecimal Converter</title>
+    <title>JOOX 版本号转换</title>
 </head>
 <body>
-    <label for="decimalInput">Enter a Decimal Number:</label>
-    <input type="number" id="decimalInput" oninput="convertToHex()">
+    <label for="input">输入版本号：</label>
+    <input id="input" oninput="convertToHex()">
+    <p style="font-size:14px;">e.g.：7.27.1.5， 0x271a0102， 656212254</p>
 
-    <p>Hexadecimal Result: <span id="hexResult"></span></p>
+    <div style="display: none;"><p>输入的版本号类型：<b><span id="type"></span></b></p></div>
+    <p>平台：<b><span id="platform"></span></b></p>
+    <p>所有版本类型：</p>
+
+    <table border="1">
+      <thead>
+        <tr>
+          <th>版本类型</th>
+          <th>安卓</th>
+          <th>iOS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>字符串</td>
+          <td><span id="android_string"></td>
+          <td><span id="ios_string"></td>
+        </tr>
+        <tr>
+          <td>数字</td>
+          <td><span id="android_num"></td>
+          <td><span id="ios_num"></td>
+        </tr>
+        <tr>
+          <td>十六进制</td>
+          <td><span id="android_hex"></td>
+          <td><span id="ios_hex"></td>
+        </tr>
+      </tbody>
+    </table>
 
     <script>
         function convertToHex() {
-            // 获取输入框中的十进制数字
-            let decimalNumber = document.getElementById("decimalInput").value;
-            // 将十进制转换为十六进制
-            let hexNumber = parseInt(decimalNumber).toString(16);
-            // 更新显示结果
-            document.getElementById("hexResult").textContent = hexNumber;
+            // 获取输入框输入
+            let input = document.getElementById("input").value
+
+            // 判断输入类型
+            let value = 0
+            if (/^0x[0-9a-fA-F]+$/.test(input)) {
+                document.getElementById("type").textContent = "16 进制"
+                value = parseInt(input, 16)
+            } else if (/^\d+\.\d+\.\d+\.\d+$/.test(input)) {
+                document.getElementById("type").textContent = "字符串"
+                let versions = input.split('.')
+                let v1 = parseInt(versions[0])
+                let v2 = parseInt(versions[1])
+                let v3 = parseInt(versions[2])
+                let v4 = parseInt(versions[3])
+                value = v1 * 256*256*256 + v2 * 256*256 + v3 * 256 + v4
+            } else if (/^\d+$/.test(input)) {
+                document.getElementById("type").textContent = "数字"
+                value = parseInt(input)
+            } else if (input.length == 0) {
+                document.getElementById("type").textContent = ""
+                value = 0
+            } else {
+                document.getElementById("type").textContent = "非法输入"
+                value = 0
+            }
+
+            let platform = parseInt(value / (256*256*256*16)) % 16 // 1 ios, 2 android
+            console.log('platform ' + platform)
+            if (platform == 1) {
+                document.getElementById("platform").textContent = "iOS"
+            } else if (platform == 2) {
+                document.getElementById("platform").textContent = "安卓"
+            } else if (value == 0) {
+                document.getElementById("platform").textContent = ""
+            } else {
+                document.getElementById("platform").textContent = "安卓/iOS"
+            }
+
+
+            if (value == 0) {
+                document.getElementById("android_string").textContent = ""
+                document.getElementById("ios_string").textContent = ""
+                document.getElementById("android_num").textContent = ""
+                document.getElementById("ios_num").textContent = ""
+                document.getElementById("android_hex").textContent = ""
+                document.getElementById("ios_hex").textContent = ""
+                return
+            }
+
+            let version_without_platform = value % (256*256*256*16)
+            let android_version = version_without_platform + 0x20000000
+            let ios_version = version_without_platform + 0x10000000
+
+            document.getElementById("android_string").textContent = versionToString(android_version)
+            document.getElementById("ios_string").textContent = versionToString(ios_version)
+            document.getElementById("android_num").textContent = android_version
+            document.getElementById("ios_num").textContent = ios_version
+            document.getElementById("android_hex").textContent = '0x' + android_version.toString(16)
+            document.getElementById("ios_hex").textContent = '0x' + ios_version.toString(16)
+        }
+
+        function versionToString(value) {
+            let v1 = parseInt(value / (256*256*256)) % 16
+            let v2 = parseInt(value / (256*256)) % 256
+            let v3 = parseInt(value / (256)) % 256
+            let v4 = parseInt(value) % 256
+            return v1 + '.' + v2 + '.' + v3 + '.' + v4
         }
     </script>
+
 </body>
 </html>
